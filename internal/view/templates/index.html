@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Web Analyzer</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 720px; margin: 40px auto; }
+    input[type=text]{ width: 100%; padding: 10px; font-size: 16px; }
+    button { padding: 10px 14px; font-size: 16px; margin-top: 10px; }
+    .error { color: #c00; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Analyze a Web Page</h1>
+  <form method="POST" action="/analyze">
+    <input type="text" name="url" placeholder="https://example.com" required />
+    <button type="submit">Analyze</button>
+  </form>
+  {{ if .error }}
+    <div class="error">{{ .error }}</div>
+  {{ end }}
+  <p style="margin-top:18px;"><a href="/api/v1/analyses" target="_blank">Recent analyses (JSON)</a></p>
+</body>
+</html>
