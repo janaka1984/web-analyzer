@@ -46,12 +46,12 @@ func (a *Analyzer) Analyze(ctx context.Context, url string) (*domain.Analysis, e
 	res.HTTPStatus = resp.StatusCode
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		b, _ := io.ReadAll(io.LimitedReader{R: resp.Body, N: 4096})
+		b, _ := io.ReadAll(&io.LimitedReader{R: resp.Body, N: 4096})
 		res.ErrorMessage = fmt.Sprintf("non-2xx status %d: %s", resp.StatusCode, string(b))
 		return res, nil
 	}
 
-	body, err := io.ReadAll(io.LimitedReader{R: resp.Body, N: 5 << 20})
+	body, err := io.ReadAll(&io.LimitedReader{R: resp.Body, N: 5 << 20})
 	if err != nil {
 		res.ErrorMessage = err.Error()
 		return res, fmt.Errorf("read: %w", err)

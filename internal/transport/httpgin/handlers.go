@@ -48,7 +48,7 @@ func (h *Handlers) AnalyzeForm(c *gin.Context) {
 	defer cancel()
 
 	res, _ := h.ana.Analyze(ctx, url)
-	_ = h.repo.Save(ctx, res) // best-effort save
+	_ = h.repo.Save(ctx, res)
 	c.HTML(http.StatusOK, "result.html", gin.H{"Result": res})
 }
 
