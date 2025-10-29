@@ -98,7 +98,6 @@ func (c *Checker) CheckLinks(ctx context.Context, baseURL string, links []string
 
 func hostOf(u string) string {
 	// minimal host detector
-	// (avoid full parse for performance; ok for test task)
 	req, err := http.NewRequest(http.MethodGet, u, nil)
 	if err != nil || req.URL == nil {
 		return ""

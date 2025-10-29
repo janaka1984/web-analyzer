@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/janaka/web-analyzer/internal/service/analyzer"
 )
 
 type Client struct {
@@ -47,3 +49,5 @@ func (c *Client) Head(ctx context.Context, url string) (*http.Response, error) {
 	req.Header.Set("User-Agent", "WebAnalyzerBot/1.0 (+https://example.com)")
 	return c.http.Do(req)
 }
+
+var _ analyzer.Fetcher = (*Client)(nil)
