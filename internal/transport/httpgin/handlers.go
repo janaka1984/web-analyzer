@@ -2,12 +2,14 @@ package httpgin
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/janaka/web-analyzer/internal/config"
 	"github.com/janaka/web-analyzer/internal/domain"
+	"github.com/janaka/web-analyzer/pkg/humanizer"
 	"github.com/janaka/web-analyzer/pkg/logger"
 	"github.com/janaka/web-analyzer/pkg/validator"
 )
@@ -47,9 +49,18 @@ func (h *Handlers) AnalyzeForm(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(h.cfg.RequestTimeoutSec)*time.Second)
 	defer cancel()
 
-	res, _ := h.ana.Analyze(ctx, url)
+	res, analyzeErr := h.ana.Analyze(ctx, url)
 	_ = h.repo.Save(ctx, res)
-	c.HTML(http.StatusOK, "result.html", gin.H{"Result": res})
+
+	// Compute human-friendly error message (if any)
+	friendlyError := ""
+	if analyzeErr != nil {
+		friendlyError = humanizer.HTTPError(analyzeErr.Error(), 0)
+	} else if res != nil && res.ErrorMessage != "" {
+		friendlyError = humanizer.HTTPError(res.ErrorMessage, res.HTTPStatus)
+	}
+	fmt.Println("🧩 FriendlyError:", friendlyError)
+	c.HTML(http.StatusOK, "result.html", gin.H{"Result": res, "FriendlyError": friendlyError})
 }
 
 // -------- JSON API --------

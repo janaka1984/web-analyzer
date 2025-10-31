@@ -20,7 +20,21 @@
   <table>
     <tr><th>URL</th><td>{{ .URL }}</td></tr>
     <tr><th>HTTP Status</th><td>{{ .HTTPStatus }}</td></tr>
-    <tr><th>Error</th><td>{{ if .ErrorMessage }}<span class="bad">{{ .ErrorMessage }}</span>{{ else }}<span class="ok">None</span>{{ end }}</td></tr>
+    <tr>
+    <th>Error</th>
+    <td>
+      {{ if $.FriendlyError }}
+        <span class="bad">{{ $.FriendlyError }}</span>
+      {{ else if .ErrorMessage }}
+        <details>
+          <summary style="cursor:pointer;color:#c00;">Show technical details</summary>
+          <pre style="white-space:pre-wrap;word-break:break-word;">{{ .ErrorMessage }}</pre>
+        </details>
+      {{ else }}
+        <span class="ok">None</span>
+      {{ end }}
+    </td>
+  </tr>
     <tr><th>HTML Version</th><td>{{ .HTMLVersion }}</td></tr>
     <tr><th>Title</th><td>{{ .Title }}</td></tr>
     <tr>
