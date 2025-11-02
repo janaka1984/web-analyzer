@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/janaka/web-analyzer/internal/config"
@@ -14,9 +15,13 @@ import (
 type AnalysisRepository interface {
 	Save(ctx context.Context, a *domain.Analysis) error
 	ListRecent(ctx context.Context, limit int) ([]domain.Analysis, error)
+	GetByID(ctx context.Context, id uint) (*domain.Analysis, error)
 }
 
-type analysisRepo struct{ db *gorm.DB }
+type analysisRepo struct {
+	db  *gorm.DB
+	log logger.Logger
+}
 
 func NewAnalysisRepository(cfg *config.Config, log logger.Logger) AnalysisRepository {
 	dsn := fmt.Sprintf(
@@ -44,4 +49,18 @@ func (r *analysisRepo) ListRecent(ctx context.Context, limit int) ([]domain.Anal
 		return nil, err
 	}
 	return rows, nil
+}
+
+// GetByID returns a single analysis record by ID
+func (r *analysisRepo) GetByID(ctx context.Context, id uint) (*domain.Analysis, error) {
+	var record domain.Analysis
+	err := r.db.WithContext(ctx).First(&record, id).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		r.log.Errorf("GetByID error: %v", err)
+		return nil, err
+	}
+	return &record, nil
 }

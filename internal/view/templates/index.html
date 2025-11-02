@@ -4,21 +4,156 @@
   <meta charset="utf-8"/>
   <title>Web Analyzer</title>
   <style>
-    body { font-family: system-ui, Arial, sans-serif; max-width: 720px; margin: 40px auto; }
+    body { font-family: system-ui, Arial, sans-serif; max-width: 900px; margin: 40px auto; }
     input[type=text]{ width: 100%; padding: 10px; font-size: 16px; }
     button { padding: 10px 14px; font-size: 16px; margin-top: 10px; }
     .error { color: #c00; margin-top: 12px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 24px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f7f7f7; text-align: left; }
+    .btn { background:#2196f3; color:white; border:none; padding:4px 8px; cursor:pointer; border-radius:4px; }
+    .overlay {
+      display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+      background:rgba(0,0,0,0.5); z-index:999;
+    }
+    .popup {
+      display:none; position:fixed; top:50%; left:50%;
+      transform:translate(-50%, -50%);
+      background:#fff; border-radius:8px; padding:20px;
+      max-width:850px; width:90%; max-height:90vh; overflow-y:auto;
+      box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:1000;
+    }
   </style>
 </head>
 <body>
   <h1>Analyze a Web Page</h1>
-  <form method="POST" action="/analyze">
+  <!-- <form method="POST" action="/analyze">
     <input type="text" name="url" placeholder="https://example.com" required />
     <button type="submit">Analyze</button>
+  </form> -->
+  <form id="analyze-form">
+    <input type="text" name="url" id="url-input" placeholder="https://example.com" required />
+    <button type="submit">Analyze</button>
   </form>
+
   {{ if .error }}
     <div class="error">{{ .error }}</div>
   {{ end }}
-  <p style="margin-top:18px;"><a href="/api/v1/analyses" target="_blank">Recent analyses (JSON)</a></p>
+
+  {{ if .Rows }}
+  <h2 style="margin-top:30px;">Recent Analyses</h2>
+  <div id="history-section">
+  <table id="history-table">
+    <thead>
+      <tr><th>#</th><th>URL</th><th>Status</th><th>Title</th><th>Date</th><th>Action</th></tr>
+    </thead>
+    <tbody id="history-body">
+      {{ range $i, $r := .Rows }}
+      <tr>
+        <td>{{ add $i 1 }}</td>
+        <td>{{ $r.URL }}</td>
+        <td>{{ $r.HTTPStatus }}</td>
+        <td>{{ $r.Title }}</td>
+        <td>{{ $r.CreatedAt }}</td>
+        <td><button class="btn" onclick="openResultPopup('{{ $r.ID }}')">View</button></td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+  </div>
+  {{ end }}
+
+  <!-- Popup -->
+  <div id="overlay" class="overlay" onclick="closePopup()"></div>
+  <div id="popup" class="popup">
+    <div id="popup-content">Loading...</div>
+    <button class="btn" onclick="closePopup()">Close</button>
+  </div>
+
+  <script>
+    async function openResultPopup(id) {
+      const overlay = document.getElementById('overlay');
+      const popup = document.getElementById('popup');
+      const content = document.getElementById('popup-content');
+      overlay.style.display = 'block';
+      popup.style.display = 'block';
+      content.innerHTML = '<p>Loading...</p>';
+
+      try {
+        const res = await fetch(`/api/v1/analysis/${id}`);
+        const html = await res.text();
+        content.innerHTML = html;
+      } catch (e) {
+        content.innerHTML = `<p style="color:red;">${e.message}</p>`;
+      }
+    }
+
+    function closePopup() {
+      document.getElementById('popup').style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
+    }
+
+  // Refresh recent analyses table after new analyze
+  async function refreshHistoryTable() {
+    try {
+      const res = await fetch('/api/v1/analyses');
+      if (!res.ok) return;
+      const rows = await res.json();
+
+      const tbody = document.getElementById('history-body');
+      tbody.innerHTML = '';
+
+      rows.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${r.url}</td>
+          <td>${r.http_status}</td>
+          <td>${r.title || ''}</td>
+          <td>${r.created_at}</td>
+          <td><button class="btn" onclick="openResultPopup('${r.id}')">View</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      console.error('Failed to refresh table:', e);
+    }
+  }
+
+  // Modify your analyze form handler to call it after success
+    document.getElementById('analyze-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const url = document.getElementById('url-input').value;
+    const formData = new FormData();
+    formData.append('url', url);
+
+    const overlay = document.getElementById('overlay');
+    const popup = document.getElementById('popup');
+    const content = document.getElementById('popup-content');
+    overlay.style.display = 'block';
+    popup.style.display = 'block';
+    content.innerHTML = '<p>Analyzing...</p>';
+
+    try {
+      // 🔹 Step 1: analyze and show popup
+      const res = await fetch('/analyze', { method: 'POST', body: formData });
+      const html = await res.text();
+      content.innerHTML = html;
+
+      // 🔹 Step 2: refresh only the table part from updated /
+      const homeRes = await fetch('/');
+      const homeHtml = await homeRes.text();
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(homeHtml, 'text/html');
+      const newTable = doc.querySelector('#history-section');
+      if (newTable) {
+        document.getElementById('history-section').innerHTML = newTable.innerHTML;
+      }
+    } catch (err) {
+      content.innerHTML = `<p style="color:red;">${err.message}</p>`;
+    }
+  });
+  </script>
 </body>
 </html>

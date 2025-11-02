@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,7 @@ type Analyzer interface {
 type Repository interface {
 	Save(ctx context.Context, a *domain.Analysis) error
 	ListRecent(ctx context.Context, limit int) ([]domain.Analysis, error)
+	GetByID(ctx context.Context, id uint) (*domain.Analysis, error)
 }
 
 type Handlers struct {
@@ -36,7 +38,13 @@ func NewHandlers(cfg *config.Config, log logger.Logger, a Analyzer, r Repository
 // -------- UI (templates) --------
 
 func (h *Handlers) Index(c *gin.Context) {
-	c.HTML(http.StatusOK, "index.html", gin.H{})
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	rows, _ := h.repo.ListRecent(ctx, 10) // latest 10 entries
+	c.HTML(http.StatusOK, "index.html", gin.H{
+		"Rows": rows,
+	})
 }
 
 func (h *Handlers) AnalyzeForm(c *gin.Context) {
@@ -65,38 +73,80 @@ func (h *Handlers) AnalyzeForm(c *gin.Context) {
 
 // -------- JSON API --------
 
-func (h *Handlers) AnalyzeJSON(c *gin.Context) {
-	var req struct {
-		URL string `json:"url"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "url required"})
-		return
-	}
-	url, err := validator.NormalizeURL(req.URL)
+// func (h *Handlers) AnalyzeJSON(c *gin.Context) {
+// 	var req struct {
+// 		URL string `json:"url"`
+// 	}
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "url required"})
+// 		return
+// 	}
+// 	url, err := validator.NormalizeURL(req.URL)
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid url"})
+// 		return
+// 	}
+// 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(h.cfg.RequestTimeoutSec)*time.Second)
+// 	defer cancel()
+
+// 	res, err := h.ana.Analyze(ctx, url)
+// 	if err != nil && res != nil && res.HTTPStatus == 0 {
+// 		c.JSON(http.StatusBadGateway, gin.H{"error": res.ErrorMessage})
+// 		return
+// 	}
+// 	_ = h.repo.Save(ctx, res)
+// 	c.JSON(http.StatusOK, res)
+// }
+
+// // ListAnalyses - show HTML history table
+// func (h *Handlers) ListAnalyses(c *gin.Context) {
+// 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+// 	defer cancel()
+
+// 	rows, err := h.repo.ListRecent(ctx, 20)
+// 	if err != nil {
+// 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+// 			"error": "Database error while fetching history.",
+// 		})
+// 		return
+// 	}
+
+// 	c.HTML(http.StatusOK, "history.html", gin.H{
+// 		"Rows": rows,
+// 	})
+// }
+
+// ViewAnalysis - show single analysis result (HTML reused by popup)
+func (h *Handlers) ViewAnalysis(c *gin.Context) {
+	idStr := c.Param("id")
+	fmt.Println("🧩 idStr:", idStr)
+	idUint, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid url"})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"error": "Invalid ID format",
+		})
 		return
 	}
-	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(h.cfg.RequestTimeoutSec)*time.Second)
-	defer cancel()
 
-	res, err := h.ana.Analyze(ctx, url)
-	if err != nil && res != nil && res.HTTPStatus == 0 {
-		c.JSON(http.StatusBadGateway, gin.H{"error": res.ErrorMessage})
-		return
-	}
-	_ = h.repo.Save(ctx, res)
-	c.JSON(http.StatusOK, res)
-}
-
-func (h *Handlers) ListAnalyses(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
-	rows, err := h.repo.ListRecent(ctx, 20)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "db error"})
+
+	row, err := h.repo.GetByID(ctx, uint(idUint))
+	fmt.Println("🧩 row:", row)
+	if err != nil || row == nil {
+		c.HTML(http.StatusNotFound, "error.html", gin.H{
+			"error": "Analysis not found.",
+		})
 		return
 	}
-	c.JSON(http.StatusOK, rows)
+
+	friendly := ""
+	if row.ErrorMessage != "" {
+		friendly = humanizer.HTTPError(row.ErrorMessage, row.HTTPStatus)
+	}
+
+	c.HTML(http.StatusOK, "result.html", gin.H{
+		"Result":        row,
+		"FriendlyError": friendly,
+	})
 }
