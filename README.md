@@ -80,8 +80,7 @@ Visit → http://localhost:8080
 
 ## 🧩 Architecural Diagram
 
-If you’re using Docker Compose, you can extend it like this:
-
+```mermaid
 flowchart TD
     subgraph Client
         A[Browser (HTML UI)]
