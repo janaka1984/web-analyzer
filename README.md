@@ -76,3 +76,30 @@ Visit → http://localhost:8080
 - SSL/TLS & redirects: Ensuring httpfetch client supports modern HTTPS sites.
 
 - Architecture balance: Keeping the project modular without overcomplicating.
+
+
+## 🧩 Architecural Diagram
+
+If you’re using Docker Compose, you can extend it like this:
+
+flowchart TD
+    subgraph Client
+        A[Browser (HTML UI)]
+    end
+
+    subgraph App
+        B[Gin Server (Go)]
+        C[Analyzer Service]
+        D[Repository (GORM)]
+    end
+
+    subgraph Infra
+        E[(PostgreSQL DB)]
+        F[(Docker Compose Network)]
+    end
+
+    A -->|HTTP/HTTPS| B
+    B --> C
+    C --> D
+    D --> E
+    B -->|Render HTML| A
