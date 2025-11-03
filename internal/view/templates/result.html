@@ -43,7 +43,7 @@
     </tr>
     <tr><th>Links</th><td>Internal={{ .InternalLinks }}, External={{ .ExternalLinks }}, Broken={{ .BrokenLinks }}</td></tr>
     <tr><th>Login Form</th><td>{{ if .HasLoginForm }}Yes{{ else }}No{{ end }}</td></tr>
-    <tr><th>Saved At</th><td>{{ .CreatedAt }}</td></tr>
+    <tr><th>Saved At</th><td>{{formatDate .CreatedAt }}</td></tr>
   </table>
   {{ end }}
 </body>

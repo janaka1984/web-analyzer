@@ -8,15 +8,21 @@ import (
 	"github.com/janaka/web-analyzer/internal/config"
 	"github.com/janaka/web-analyzer/internal/repository"
 	"github.com/janaka/web-analyzer/internal/service/analyzer"
+	"github.com/janaka/web-analyzer/pkg/humanizer"
 	"github.com/janaka/web-analyzer/pkg/logger"
 )
 
 func BuildRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
+	// r.SetFuncMap(template.FuncMap{
+	// 	"add": func(a, b int) int { return a + b },
+	// })
 	r.SetFuncMap(template.FuncMap{
-		"add": func(a, b int) int { return a + b },
+		"add":        func(a, b int) int { return a + b },
+		"formatDate": humanizer.FormatDate,
 	})
+
 	r.LoadHTMLGlob("internal/view/templates/*")
 
 	// Wire dependencies
@@ -30,15 +36,13 @@ func BuildRouter(cfg *config.Config, log logger.Logger) *gin.Engine {
 	r.GET("/", h.Index)               // form page
 	r.POST("/analyze", h.AnalyzeForm) // form submit -> results page
 
-	// API JSON
+	// API v1
 	api := r.Group("/api/v1")
 	{
-		// api.POST("/analyze", h.AnalyzeJSON)
-		// api.GET("/analyses", h.ListAnalyses)
 		api.GET("/analysis/:id", h.ViewAnalysis)
 	}
 
-	// health
+	// health check
 	r.GET("/healthz", func(c *gin.Context) { c.JSON(200, gin.H{"ok": true}) })
 
 	return r

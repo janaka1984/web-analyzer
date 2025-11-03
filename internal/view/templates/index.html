@@ -54,7 +54,7 @@
         <td>{{ $r.URL }}</td>
         <td>{{ $r.HTTPStatus }}</td>
         <td>{{ $r.Title }}</td>
-        <td>{{ $r.CreatedAt }}</td>
+        <td>{{formatDate $r.CreatedAt }}</td>
         <td><button class="btn" onclick="openResultPopup('{{ $r.ID }}')">View</button></td>
       </tr>
       {{ end }}
