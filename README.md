@@ -78,23 +78,23 @@ Visit → http://localhost:8080
 - Architecture balance: Keeping the project modular without overcomplicating.
 
 
-## 🧩 Architecural Diagram
+## 🧩 Architectural Diagram
 
 ```mermaid
 flowchart TD
     subgraph Client
-        A[Browser (HTML UI)]
+        A["Browser (HTML UI)"]
     end
 
     subgraph App
-        B[Gin Server (Go)]
-        C[Analyzer Service]
-        D[Repository (GORM)]
+        B["Gin Server (Go)"]
+        C["Analyzer Service"]
+        D["Repository (GORM)"]
     end
 
     subgraph Infra
-        E[(PostgreSQL DB)]
-        F[(Docker Compose Network)]
+        E["PostgreSQL DB"]
+        F["Docker Compose Network"]
     end
 
     A -->|HTTP/HTTPS| B
