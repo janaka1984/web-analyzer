@@ -14,11 +14,14 @@ import (
 func TestFullAnalyzeAgainstTestServer(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<!doctype html><html><head><title>Home</title></head>
-		<body><h1>Welcome</h1><a href="/ok">ok</a><a href="/nope">broken</a></body></html>`))
+		if _, err := w.Write([]byte(`<!doctype html><html><head><title>Home</title></head>`)); err != nil {
+			t.Fatalf("failed to write response: %v", err)
+		}
+
 	})
-	mux.HandleFunc("/ok", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok")) })
-	// /nope -> no handler => 404
+	mux.HandleFunc("/ok", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("ok"))
+	})
 
 	ts := httptest.NewServer(mux)
 	defer ts.Close()

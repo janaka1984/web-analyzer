@@ -7,11 +7,6 @@ import (
 	"time"
 )
 
-type httpDoer interface {
-	Head(ctx context.Context, url string) (*http.Response, error)
-	Get(ctx context.Context, url string) (*http.Response, error)
-}
-
 type Checker struct {
 	workers int
 }
