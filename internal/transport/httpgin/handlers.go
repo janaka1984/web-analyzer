@@ -67,54 +67,9 @@ func (h *Handlers) AnalyzeForm(c *gin.Context) {
 	} else if res != nil && res.ErrorMessage != "" {
 		friendlyError = humanizer.HTTPError(res.ErrorMessage, res.HTTPStatus)
 	}
-	fmt.Println("🧩 FriendlyError:", friendlyError)
+	fmt.Println("FriendlyError:", friendlyError)
 	c.HTML(http.StatusOK, "result.html", gin.H{"Result": res, "FriendlyError": friendlyError})
 }
-
-// -------- JSON API --------
-
-// func (h *Handlers) AnalyzeJSON(c *gin.Context) {
-// 	var req struct {
-// 		URL string `json:"url"`
-// 	}
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "url required"})
-// 		return
-// 	}
-// 	url, err := validator.NormalizeURL(req.URL)
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid url"})
-// 		return
-// 	}
-// 	ctx, cancel := context.WithTimeout(c.Request.Context(), time.Duration(h.cfg.RequestTimeoutSec)*time.Second)
-// 	defer cancel()
-
-// 	res, err := h.ana.Analyze(ctx, url)
-// 	if err != nil && res != nil && res.HTTPStatus == 0 {
-// 		c.JSON(http.StatusBadGateway, gin.H{"error": res.ErrorMessage})
-// 		return
-// 	}
-// 	_ = h.repo.Save(ctx, res)
-// 	c.JSON(http.StatusOK, res)
-// }
-
-// // ListAnalyses - show HTML history table
-// func (h *Handlers) ListAnalyses(c *gin.Context) {
-// 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-// 	defer cancel()
-
-// 	rows, err := h.repo.ListRecent(ctx, 20)
-// 	if err != nil {
-// 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-// 			"error": "Database error while fetching history.",
-// 		})
-// 		return
-// 	}
-
-// 	c.HTML(http.StatusOK, "history.html", gin.H{
-// 		"Rows": rows,
-// 	})
-// }
 
 // ViewAnalysis - show single analysis result (HTML reused by popup)
 func (h *Handlers) ViewAnalysis(c *gin.Context) {
