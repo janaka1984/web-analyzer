@@ -14,11 +14,22 @@ import (
 func TestFullAnalyzeAgainstTestServer(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/index.html", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := w.Write([]byte(`<!doctype html><html><head><title>Home</title></head>`)); err != nil {
+		html := `
+		<!doctype html>
+		<html>
+		<head><title>Home</title></head>
+		<body>
+			<h1>Welcome</h1>
+			<a href="/ok">Internal OK</a>
+			<a href="/missing">Broken Link</a>
+			<a href="/another">Internal Again</a>
+		</body>
+		</html>`
+		if _, err := w.Write([]byte(html)); err != nil {
 			t.Fatalf("failed to write response: %v", err)
 		}
-
 	})
+
 	mux.HandleFunc("/ok", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("ok"))
 	})
@@ -42,7 +53,7 @@ func TestFullAnalyzeAgainstTestServer(t *testing.T) {
 	if res.H1 != 1 {
 		t.Fatalf("h1: %d", res.H1)
 	}
-	if res.InternalLinks != 2 {
+	if res.InternalLinks != 3 {
 		t.Fatalf("internal: %d", res.InternalLinks)
 	}
 	if res.BrokenLinks < 1 {
