@@ -1,5 +1,23 @@
 # ────────────────────────────────
-# 1. Build stage
+# 1. Test stage
+# ────────────────────────────────
+FROM golang:1.25-alpine AS tester
+
+WORKDIR /app
+
+# Copy dependency files first for better caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy all source files
+COPY . .
+
+# Run tests with coverage — build fails if tests fail
+RUN go test ./... -cover
+
+
+# ────────────────────────────────
+# 2. Build stage
 # ────────────────────────────────
 FROM golang:1.25-alpine AS builder
 
@@ -20,7 +38,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api ./cmd/api
 
 
 # ────────────────────────────────
-# 2. Runtime stage
+# 3. Runtime stage
 # ────────────────────────────────
 FROM gcr.io/distroless/base-debian12
 

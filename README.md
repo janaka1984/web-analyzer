@@ -22,16 +22,16 @@ git clone https://github.com/janaka1984/web-analyzer.git
 cd web-analyzer
 ```
 
-### Quick start
+### Quick start - Runs tests, then starts API only if tests pass
 
 ```bash
 docker compose up --build
 ```
 
-### Test unit test and integraion test
+### Runs tests only
 
 ```bash
-go test ./... -cover
+docker compose run --rm test
 ```
 
 

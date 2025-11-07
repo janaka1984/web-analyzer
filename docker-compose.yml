@@ -16,6 +16,23 @@ services:
       timeout: 5s
       retries: 20
 
+  # ────────────────────────────────
+  # Test Service
+  # ────────────────────────────────
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tester          # run only the test stage
+    image: web-analyzer-test
+    depends_on:
+      db:
+        condition: service_healthy
+    command: go test ./... -cover
+    volumes:
+      - .:/app
+    tty: true
+
   api:
     build: .
     env_file: .env
