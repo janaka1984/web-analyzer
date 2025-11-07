@@ -28,6 +28,13 @@ cd web-analyzer
 docker compose up --build
 ```
 
+### Test unit test and integraion test
+
+```bash
+go test ./... -cover
+```
+
+
 ### Open in browser
 
 Visit → http://localhost:8080
